@@ -43,6 +43,10 @@ metadata {
 		
 		command "temperatureUp"
 		command "temperatureDown"
+		command "ecoheat"
+		command "ecooff"
+		command "boost"
+		command "boostoff"
 
 		fingerprint mfr: "0328", prod: "0003", model: "0001", deviceJoinName: "Eurotronic Spirit TRV"
 	}
@@ -190,8 +194,8 @@ metadata {
 
 		standardTile("ecoMode", "device.thermostatMode", height: 2, width: 2, decoration: "flat") {
         	state "default", action:"ecoheat", label: "eco"
-			//state "eco", action:"ecoheat", label: "Eco", icon: "st.nest.nest-leaf"
-			state "eco", action:"ecooff", label: "eco"
+			//state "eco", action:"ecoheat", label: "Eco" //icon: "st.nest.nest-leaf"
+			state "eco", action:"ecooff", label: "comfort", backgroundColor:"#44b621"
 		}
 
 			standardTile("lock", "device.lock", width: 2, height: 2, decoration: "flat") {
@@ -822,6 +826,5 @@ def secure(physicalgraph.zwave.Command cmd) {
 		zwaveEvent(encapsulatedCommand)
 	}
 }
-
 
 
