@@ -15,7 +15,7 @@
  *Work in progress. Currently works well with classic. Working on new app compatibility. Currently seen as a lock in new app with some tiles functioning.
  *Many thanks to previous version from dougalAgain & mark_cockcroft. Most of the 'hard' work was done before me.
  *
- *version4
+ *version5
  *In this version Direct Valve Control added, with setLevel (changed from custom) with "Switch Level" capability command for valve control.
  *Ability to turn poll off and have TRV report on thresholds as per documentation
  *New app reporting lock / valve (Dimmer) status / battery / temperature / operating mode and / mode.
@@ -26,9 +26,12 @@
  */
 metadata {
 	definition (name: "Eurotronic Spirit TRV", namespace: "Wogapat", author: "Patrick Wogan", cstHandler: true) {
+		capability "Actuator"
 		capability "Battery"
+		capability "Configuration"
 		capability "Lock"
         capability "Refresh"
+		capability "Sensor"
 		capability "Switch Level"
 		capability "Temperature Measurement"
 		capability "Thermostat Heating Setpoint"
@@ -36,6 +39,9 @@ metadata {
         capability "Thermostat Operating State"
 		capability "Notification"
 		capability "Valve"
+		
+		command "temperatureUp"
+		command "temperatureDown"
 
 		fingerprint mfr: "0328", prod: "0003", model: "0001", deviceJoinName: "Eurotronic Spirit TRV"
 	}
@@ -84,11 +90,11 @@ metadata {
 				}
 
 				tileAttribute("device.thermostatMode", key: "THERMOSTAT_MODE") { //need
-					attributeState "boost", label:'${currentValue}', backgroundColor:"#bc2323"
-					attributeState "eco", label:'${name}', backgroundColor:"#44b621"
-					attributeState "dvc", label:'${name}', backgroundColor:"#d04e00" 
-					attributeState "off", label:'${name}', backgroundColor:"#1e9cbb"
-					attributeState "comfort", label:'${name}', backgroundColor:"#d04e00" 
+					attributeState "boost", label:'${currentValue}' //, icon: "st.thermostat.heating", backgroundColor:"#bc2323"
+					attributeState "eco", label:'${name}' //, icon: "st.nest.nest-leaf", backgroundColor:"#44b621"
+					attributeState "dvc", label:'${name}' //, icon: "st.nest.nest-leaf", backgroundColor:"#44b621"
+					attributeState "frost", label:'${name}' //, icon: "st.thermostat.heating-cooling-off", backgroundColor:"#1e9cbb"
+					attributeState "comfort", label:'${name}' //, icon: "st.thermostat.heat"
 				}
 
 				tileAttribute("device.thermostatSetpoint", key: "HEATING_SETPOINT") {
@@ -181,10 +187,11 @@ metadata {
 				state "boost", label:'comfort', action:"boostoff", backgroundColor:"#bc2323"
 			}
 
-			standardTile("ecoMode", "device.thermostatMode", height: 2, width: 2, decoration: "flat") {
-				state "default", action:"ecoheat", label: "eco"
-				state "eco", action:"ecooff", label: "comfort", backgroundColor:"#44b621"
-			}
+		standardTile("ecoMode", "device.thermostatMode", height: 2, width: 2, decoration: "flat") {
+        	state "default", action:"ecoheat", label: "eco"
+			//state "eco", action:"ecoheat", label: "Eco", icon: "st.nest.nest-leaf"
+			state "eco", action:"ecooff", label: "eco"
+		}
 
 			standardTile("lock", "device.lock", width: 2, height: 2, decoration: "flat") {
             state "unlocked", label: "lock", action: "lock"
@@ -398,12 +405,12 @@ def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv5.SensorMultilevelR
 			state.switch = "on"
 		}
 		if (cmd.value == 15){ //15 - 0x0F = off
-			state.thermostatMode = "off"
+			state.thermostatMode = "frost"
 			state.thermostatOperatingState = "frost"
 			state.switch = "off"
 		}
 		if (cmd.value == 254){     //254 - 0xFE = direct valve contol mode
-			state.thermostatMode = "comfort"
+			state.thermostatMode = "dvc"
 			state.thermostatOperatingState = "Direct Valve Control"
 			state.switch = "on"
 		}
@@ -434,12 +441,12 @@ def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv5.SensorMultilevelR
 			state.switch = "on"
 		}
 		if (cmd.mode == 0){ // 0 off 0x00
-			state.thermostatMode = "off"
+			state.thermostatMode = "frost"
 			state.thermostatOperatingState = "frost"
 			state.switch = "off"
 		}
 		if (cmd.mode == 31){ // 31 dvc 0xFE
-			state.thermostatMode = "comfort"
+			state.thermostatMode = "dvc"
 			state.thermostatOperatingState = "Direct Valve Control"
 			state.switch = "on"
 		}
@@ -565,7 +572,30 @@ def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv5.SensorMultilevelR
 		log.trace "Executing 'setHeatingSetpoint' : Setting Temp to ${degrees},  $cmds"
 		secureSequence(cmds)
 	}
-
+def temperatureUp() {
+    //log.debug(device.currentValue("nextHeatingSetpoint").toBigDecimal())
+	def nextTemp = device.currentValue("nextHeatingSetpoint").toBigDecimal() + 0.5
+							// TODO: deal with Farenheit?
+	if(nextTemp > 28) {		// It can't handle above 28, so don't allow it go above
+		nextTemp = 28
+	}
+	sendEvent(name:"nextHeatingSetpoint", value: nextTemp, unit: getTemperatureScale(), displayed: false)	
+    runIn (5, "buffSetpoint",[data: [value: nextTemp], overwrite: true])
+}
+def temperatureDown() {
+	def nextTemp = device.currentValue("nextHeatingSetpoint").toBigDecimal() - 0.5
+	if(nextTemp < 8) {		// It can't go below 8, so don't allow it
+		nextTemp = 8
+	}
+	sendEvent(name:"nextHeatingSetpoint", value: nextTemp, unit: getTemperatureScale(), displayed: false)	
+   	runIn (5, "buffSetpoint",[data: [value: nextTemp], overwrite: true])
+}
+def buffSetpoint(data) {
+	def key = "value"
+	def nextTemp = data[key]
+    //log.debug " buff nextTemp is $nextTemp"
+	setHeatingSetpoint(nextTemp)
+}
 	def frost() {
 		log.trace "frost to off"
 		off()
@@ -791,3 +821,6 @@ def secure(physicalgraph.zwave.Command cmd) {
 		zwaveEvent(encapsulatedCommand)
 	}
 }
+
+
+
