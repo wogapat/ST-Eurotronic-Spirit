@@ -15,7 +15,8 @@
  *Work in progress. Currently works well with classic. Working on new app compatibility. Currently seen as a lock in new app with some tiles functioning.
  *Many thanks to previous version from dougalAgain & mark_cockcroft. Most of the 'hard' work was done before me.
  *
- *version5
+ *******************************version6*****************************
+ *
  *In this version Direct Valve Control added, with setLevel (changed from custom) with "Switch Level" capability command for valve control.
  *Ability to turn poll off and have TRV report on thresholds as per documentation
  *New app reporting lock / valve (Dimmer) status / battery / temperature / operating mode and / mode.
