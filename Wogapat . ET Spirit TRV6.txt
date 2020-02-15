@@ -220,14 +220,14 @@ metadata {
 			}
 	   
 		   valueTile("trv", "device.level", inactiveLabel: true, height: 2, width: 2, decoration: "flat") {
-				state "trv", label: 'valve    ${currentValue} %', defaultState: true
+				state "default", label: 'valve    ${currentValue} %', defaultState: true
 			}
-			controlTile("dimmer", "device.level", "slider", height: 2, width: 2, inactiveLabel: true) {
-				state "trv"
-        }
+			controlTile("dimmer", "device.level", "slider", height: 2, width: 2) {
+			state "level", action:"switch level.setLevel"
+			}
 			
 			main "temperature"
-			details(["temperature", "boostMode", "ecoMode", "lock", "turnOff", "refresh", "battery", "configureAfterSecure", "dvcMode", "trv"])
+			details(["temperature", "boostMode", "ecoMode", "lock", "turnOff", "refresh", "battery", "configureAfterSecure", "dvcMode", "trv", "dimmer"])
 		}
 	
 	def rates = [:]
@@ -551,16 +551,18 @@ def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv5.SensorMultilevelR
 		secureSequence (cmds)
 	}
 
-	def setLevel() {
-		log.debug "Executing 'setLevel'"
-		def nextValveSet = number
-
-		sendEvent(name:"nextValveSetpoint", value: nextValveSet, descriptionText: "Next valve setpoint : ${nextValveSet}", displayed: true, isStateChange:false)
+	def setLevel(val) {
+		def cmds = []
+	    //log.debug "setLevel $val"
+		//log.debug "Executing 'setLevel'"
+			def nextValveSet = val
+		//log.debug "nextValveSet $nextValveSet"
+		sendEvent(name:"nextValveSetpoint", value: nextValveSet, descriptionText: "Next valve setpoint : $nextValveSet", displayed: true, isStateChange:false)
 		
 		cmds << zwave.switchMultilevelV3.switchMultilevelSet(value: nextValveSet)
 		cmds << zwave.switchMultilevelV3.switchMultilevelGet()
 				
-		log.info "Executing 'setLevel' : $cmds"
+		log.trace "Executing 'setLevel' : $cmds"
 		secureSequence(cmds)
 	}
 
@@ -619,7 +621,7 @@ def buffSetpoint(data) {
 		def cmds = []
 		sendEvent(name: "thermostatMode", value: "heat", displayed: true)
 		cmds << zwave.thermostatModeV2.thermostatModeSet(mode: 1)
-		cmds << zwave.thermostatModeV2.thermostatModeGet()
+		cmds << zwave.thermostatModeV2.thermostatModeGet()		
 		log.trace "heat $cmds" 
 		secureSequence (cmds)
 	}
@@ -653,6 +655,7 @@ def buffSetpoint(data) {
 		sendEvent(name: "directvalvecontrol", value: "dvcon", displayed: true)
 		cmds << zwave.thermostatModeV2.thermostatModeSet(mode: 31)
 		cmds << zwave.thermostatModeV2.thermostatModeGet()
+		cmds << zwave.switchMultilevelV3.switchMultilevelGet()
 		log.trace "Executing 'auto' : DVC On : $cmds"
 		secureSequence(cmds)
 	}
@@ -826,5 +829,6 @@ def secure(physicalgraph.zwave.Command cmd) {
 		zwaveEvent(encapsulatedCommand)
 	}
 }
+
 
 
