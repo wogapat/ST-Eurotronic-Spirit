@@ -535,16 +535,17 @@ def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv5.SensorMultilevelR
 	// handle commands
 	def lock() {
 		def cmds = []
-		sendEvent(name: "lock", value: "locked", displayed: false)
+		sendEvent(name: "lock", value: "locked", displayed: true)
 		cmds << zwave.protectionV1.protectionSet(protectionState: 1)
 		cmds << zwave.protectionV1.protectionGet()
 		log.trace "Executing 'lock' : $cmds" 
 		secureSequence(cmds)
+		log.info "Protection State - ${state.protectionState}, ${state.thermostatProtectionState}"
 	}
 
 	def unlock() {
 		def cmds = []
-		sendEvent(name: "unlock", value: "unlocked", displayed: false)
+		sendEvent(name: "unlock", value: "unlocked", displayed: true)
 		cmds << zwave.protectionV1.protectionSet(protectionState: 0)
 		cmds << zwave.protectionV1.protectionGet()
 		log.trace "Executing 'unlock' : $cmds" 
