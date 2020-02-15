@@ -545,7 +545,7 @@ def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv5.SensorMultilevelR
 
 	def unlock() {
 		def cmds = []
-		sendEvent(name: "unlock", value: "unlocked", displayed: true)
+		sendEvent(name: "lock", value: "unlocked", displayed: true)
 		cmds << zwave.protectionV1.protectionSet(protectionState: 0)
 		cmds << zwave.protectionV1.protectionGet()
 		log.trace "Executing 'unlock' : $cmds" 
