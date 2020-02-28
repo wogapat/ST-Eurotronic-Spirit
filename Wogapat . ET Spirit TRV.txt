@@ -12,6 +12,8 @@
 	 *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
 	 *  for the specific language governing permissions and limitations under the License.
 	 *
+	 *//////////////////////////Version 11////////////////////////////////////
+	 *
 	 *
 	 * Icons
 	 * Lock - Icons made by Chanut from www.flaticon.com 
@@ -52,6 +54,7 @@
 			command "dvcoff"
 			command "temperatureDown"
 			command "Poll"
+			command "setCoolingSetpoint"
 
 			attribute "minHeatingSetpoint", "number" // google / amazon
 			attribute "maxHeatingSetpoint", "number" // google / amazon
@@ -207,7 +210,7 @@
 
 			//Boost
 			standardTile("boostMode", "device.thermostatMode", height: 2, width: 2, decoration: "flat") {
-					state "default", label:'boost', action:"heat", icon:" https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/levelup.png"
+					state "default", label:'boost', action:"heat", icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/levelup.png"
 					state "heat", label:'auto', action:"auto", icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/levelup.png", backgroundColor:"#bc2323"
 				}
 
@@ -377,7 +380,7 @@
 
 	//Valve
 	def zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv3.SwitchMultilevelReport cmd){
-		log.info "Report Received : Valve open '${cmd.value}'%"
+		log.info "Report Received : Valve open ${cmd.value}%"
 		/*def valvePos
 
 		if (cmd.value == 0 ) {
@@ -515,8 +518,6 @@
 		supportedModes << "heat" 
 		supportedModes << "cool" //eco //removed 4/2/19 == true)
 		supportedModes << "auto" 
-		supportedModes << "Boost"
-		supportedModes << "Comfort"
 		//supportedModes << "emergency heat" //Boost
 		log.debug "$supportedModes"
 		state.supportedModes = supportedModes //.toString()
@@ -609,8 +610,17 @@
 	}
 
 	def setCoolingSetpoint(temp){
-		log.trace "Set cooling setpoint temp of ${temp}, sending temp value to setHeatingSetpoint"
-		setHeatingSetpoint(temp)
+		/*log.debug "$temp"
+		def nextTemp = $temp
+		if(nextTemp < 8) {		// It can't go below 8, so don't allow it
+			nextTemp = 8
+		}
+		if(nextTemp > 28) {		// It can't handle above 28, so don't allow it go above
+			nextTemp = 28
+		}
+		log.debug "$nextTemp"
+		log.trace "Set cooling setpoint temp of ${nextTemp}, sending temp value to setHeatingSetpoint"
+		setHeatingSetpoint(nextTemp)*/
 	}
 
 	def setHeatingSetpoint(Double degrees) { //Double added
@@ -711,10 +721,20 @@
 		
 	def dvcon() { //taken from Mode off new app
 		def cmds = []
+		def currentLevel
+		def maintLevel
+		//log.trace device.currentValue("level")
+			currentLevel = device.currentValue("level")
+			maintLevel = currentLevel.toInteger()
+			log.trace "${maintLevel}"
+
 		sendEvent(name: "thermostatMode", value: "off", displayed: true)
 		cmds << zwave.thermostatModeV2.thermostatModeSet(mode: 31)
 		cmds << zwave.thermostatModeV2.thermostatModeGet()
-		cmds << zwave.switchMultilevelV3.switchMultilevelGet()
+		
+		setLevel(maintLevel)
+		//cmds << zwave.switchMultilevelV3.switchMultilevelSet(value: maintLevel)
+			//cmds << zwave.switchMultilevelV3.switchMultilevelGet()
 		log.trace "DVC On : $cmds"
 		secureSequence(cmds)
 	}
@@ -758,15 +778,12 @@
 	}
 		
 	//SetValve during DVC
-		def setLevel(val) {
+		def setLevel(nextLevel) {
 			def cmds = []
-			//log.debug "setLevel $val"
-			//log.debug "Executing 'setLevel'"
-				def nextValveSet = val
-			//log.debug "nextValveSet $nextValveSet"
-			sendEvent(name:"setlevel", value: nextValveSet, displayed: true, isStateChange:true)
+
+			sendEvent(name:"level", value: nextLevel, displayed: true, isStateChange:true)
 			
-			cmds << zwave.switchMultilevelV3.switchMultilevelSet(value: nextValveSet)
+			cmds << zwave.switchMultilevelV3.switchMultilevelSet(value: nextLevel)
 			cmds << zwave.switchMultilevelV3.switchMultilevelGet()
 					
 			log.trace "Executing 'setLevel' : $cmds"
@@ -854,6 +871,11 @@
 		}
 	}
 
+	// PING is used by Device-Watch in attempt to reach the Device
+	def ping() {
+		refresh()
+	}
+	
 	def poll() { // If you add the Polling capability to your device type, this command will be called approximately every 5 minutes to check the device's state
 		//log.debug "poll"
 		def cmds = []
