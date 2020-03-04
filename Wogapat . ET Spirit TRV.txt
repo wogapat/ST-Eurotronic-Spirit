@@ -12,8 +12,7 @@
 	 *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
 	 *  for the specific language governing permissions and limitations under the License.
 	 *
-	 *****************************Version 11*************************************
-	 *
+	 ***************************Version 12******************************************
 	 *
 	 * Icons
 	 * Lock - Icons made by Chanut from www.flaticon.com 
@@ -26,7 +25,7 @@
 	 *
 	 */
 	metadata {
-		definition (name: "Eurotronic Spirit TRV + DVC", namespace: "wogapat", author: "Patrick Wogan", cstHandler: true) {
+		definition (name: "Eurotronic Spirit TRV + DVC - Test", namespace: "wogapat", author: "Patrick Wogan", cstHandler: true) {
 			capability "Actuator"
 			capability "Sensor"
 			capability "Battery"
@@ -165,7 +164,7 @@
 				state "heating", label:'${name}', icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/fire.png", backgroundColor:"#d04e00"
 				state "boost", label:'${name}',  icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/levelup.png", backgroundColor:"#bc2323"
 				state "frost", label:'${name}', icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/snowflake.png", backgroundColor:"#1e9cbb"
-				state "Direct Valve Control", label:'${name}', icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/snowflake.png",  backgroundColor:"#d04e00"
+				state "Direct Valve Control", label:'${name}', icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/switch.png",  backgroundColor:"#d04e00"
 			}
 
 			valueTile("temp", "device.temperature", inactiveLabel: true, height: 2, width: 2, decoration: "flat") {
@@ -266,6 +265,29 @@
 			details(["temperature", "boostMode", "ecoMode", "lock", "frost", "dvcMode", "battery", "configure", "refresh", "trv", "setValve",])
 			}
 		
+		
+		//options for InvertLCD
+		def LCDinvertOptions = [:]
+			LCDinvertOptions << ["0" : "No"] // 0x00
+			LCDinvertOptions << ["1" : "Yes"] // 0x01
+			
+		//options for backlight
+		def backlightOptions = [:]
+			backlightOptions << ["0" : "No"] // 0x00
+			backlightOptions << ["1" : "Yes"] // 0x01
+			
+		//options for battery notification
+		def batteryNotOptions = [:]
+			batteryNotOptions << ["0" : "Event only"] // 0x00
+			batteryNotOptions << ["1" : "Once a day"] // 0x01
+			
+		//options for window detection
+		def windowDetectOptions = [:]
+			windowDetectOptions << ["0" : "Disabled"] // 0x00
+			windowDetectOptions << ["1" : "Low"] // 0x01
+			windowDetectOptions << ["2" : "Medium"] // 0x02
+			windowDetectOptions << ["3" : "High"] // 0x03
+			
 		//Rates for Poll
 		def rates = [:]
 			rates << ["0" : "Off - Set temperature, valve & battery reports, if required"]
@@ -301,21 +323,21 @@
 		//Settings Page
 		preferences {
 			//parameter 1
-			input "LCDinvert", "enum", title: "Invert LCD", options: ["No", "Yes"], defaultValue: "Yes", required: false, displayDuringSetup: true
+			input "LCDinvert", "enum", title: "Invert LCD", options: LCDinvertOptions, required: false, displayDuringSetup: true
 			//parameter 2
 			input "LCDtimeout", "number", title: "LCD timeout (in secs)", description: "LCD off after: (5 - 30secs)", range: "5..30", displayDuringSetup: true
 			//custom parameter
 			input "ecoTemp", "number", title: "Eco heating setpoint", description: "Set eco heating setpoint : (8 - 28°C)", range: "8..28", displayDuringSetup: false
 			//parameter 3
-			input "backlight", "enum", title: "Enable backlight", options: ["No", "Yes"], defaultValue: "Yes", required: false, displayDuringSetup: true
+			input "backlight", "enum", title: "Enable backlight", options: backlightOptions, required: false, displayDuringSetup: true
 			//parameter 4 
-			input "battNotification", "enum", title: "Battery notification", options: ["Event only", "Once a day"], defaultValue: "Once a day", required: false, displayDuringSetup: true // 0x00 Battery status is only reported as a system notification (Notification CC)  0x01 Send battery status unsolicited once a day default: 0x01
+			input "battNotification", "enum", title: "Battery notification", options: batteryNotOptions, required: false, displayDuringSetup: true // 0x00 Battery status is only reported as a system notification (Notification CC)  0x01 Send battery status unsolicited once a day default: 0x01
 			//parameter 5
-			input "tempReport", "enum", title: "Temperature report threshold", description: "Set device thresholds to report temperature changes", options: tempReportRates, defaultValue: "0", required: false, displayDuringSetup: false
+			input "tempReport", "enum", title: "Temperature report threshold", description: "Set device thresholds to report temperature changes", options: tempReportRates, defaultValue: "Off - Default", required: false, displayDuringSetup: false
 			//parameter 6
-			input "valveReport", "enum", title: "Valve report threshold", description: "Set device thresholds to report valve changes", options: valveReportRates, defaultValue: "0", required: false, displayDuringSetup: false
+			input "valveReport", "enum", title: "Valve report threshold", description: "Set device thresholds to report valve changes", options: valveReportRates, defaultValue: "Off - Default", required: false, displayDuringSetup: false
 			//parameter 7
-			input "windowOpen", "enum", title: "Window open detection sensitivity",description: "Window open detection sensitivity", options: ["Disabled", "Low", "Medium", "High"] , defaultValue: "Medium", required: false, displayDuringSetup: false
+			input "windowOpen", "enum", title: "Window open detection sensitivity",description: "Window open detection sensitivity", options: windowDetectOptions, defaultValue: "Medium", required: false, displayDuringSetup: false
 			//parameter 8
 			input "tempOffset", "number", title: "Temperature offset", description: "Set temperature offset : (-5 to +5°C)", range: "-5..5", displayDuringSetup: false
 			// custom paramater
@@ -323,7 +345,7 @@
 			// custom parameter
 			input "tempMax", "number", title: "Max temperature recorded", description: "default 28 : (range 25 to 28°C)", range: "25..28", displayDuringSetup: false
 			// custom parameter
-			input name: "refreshRate", type: "enum", title: "Refresh Rate", options: rates, description: "Select refresh rate", defaultValue: "5", required: false
+			input name: "refreshRate", type: "enum", title: "Refresh Rate", options: rates, description: "Select refresh rate", defaultValue: "Default - Refresh every 5 minutes", required: false
 		}
 		
 	// parse events into attributes
@@ -417,37 +439,43 @@
 		createEvent(map)
 	}
 
-	//Thermostat SetPoint
-	def zwaveEvent(physicalgraph.zwave.commands.thermostatsetpointv2.ThermostatSetpointReport cmd) { //	Parsed ThermostatSetpointReport(precision: 2, reserved01: 0, scale: 0, scaledValue: 21.00, setpointType: 1, size: 2, value: [8, 52])
-		def event = []
-		state.scale = cmd.scale	// So we can respond with same format later, see setHeatingSetpoint()
-		state.precision = cmd.precision
-		def radiatorSetPoint = cmd.scaledValue
+//Thermostat SetPoint
+def zwaveEvent(physicalgraph.zwave.commands.thermostatsetpointv2.ThermostatSetpointReport cmd) { //	Parsed ThermostatSetpointReport(precision: 2, reserved01: 0, scale: 0, scaledValue: 21.00, setpointType: 1, size: 2, value: [8, 52])
+	def event = []
+	def currentState = device.currentValue("thermostatOperatingState")
+	state.scale = cmd.scale	// So we can respond with same format later, see setHeatingSetpoint()
+	state.precision = cmd.precision
+	def radiatorSetPoint = cmd.scaledValue
 
-		if (cmd.setpointType == 1 ) { //this is the standard heating setpoint //sendEvent
+	if (cmd.setpointType == 1 & currentState != "eco") { //this is the standard heating setpoint
+		//sendEvent
 			event << createEvent(name: "nextHeatingSetpoint", value: radiatorSetPoint, unit: getTemperatureScale(), displayed: true)
 			event << createEvent(name: "heatingSetpoint", value: radiatorSetPoint.toString(), unit: getTemperatureScale(), displayed: true)
 			event << createEvent(name: "thermostatSetpoint", value: radiatorSetPoint.toString(), unit: getTemperatureScale(), displayed: false)
 			event << createEvent(name: "thermostatTemperatureSetpoint", value: radiatorSetPoint.toString(), unit: "C", displayed: false)
-		}
-		if (cmd.setpointType == 11 ) { // this is eco heat setting on this device
-			//event << createEvent(name: "coolingSetpoint", value: radiatorSetPoint.toString(), unit: getTemperatureScale(), displayed: false)
-		}
-		log.info "Report Received : ${cmd}"
-		return event //List
 	}
+	
+	if (cmd.setpointType == 11 & currentState == "eco") { // this is eco heat setting on this device
+			event << createEvent(name: "nextHeatingSetpoint", value: radiatorSetPoint, unit: getTemperatureScale(), displayed: true)
+			event << createEvent(name: "heatingSetpoint", value: radiatorSetPoint.toString(), unit: getTemperatureScale(), displayed: true)
+			event << createEvent(name: "thermostatSetpoint", value: radiatorSetPoint.toString(), unit: getTemperatureScale(), displayed: false)
+			event << createEvent(name: "thermostatTemperatureSetpoint", value: radiatorSetPoint.toString(), unit: "C", displayed: false)
+	}
+	log.info "Report Received : ${cmd}"
+	return event //List
+}
 
 	//Basic Operating State
 	def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd){
 		def event = [ ]
 		if (cmd.value == 255) { //255 - 0xFF = normal mode
 			state.thermostatMode = "auto"
-			state.thermostatOperatingState = "Heating"
+			state.thermostatOperatingState = "heating"
 			state.switch = "on"
 		}
 		if (cmd.value == 240){ //240 - 0xF0 = Boost
 			state.thermostatMode = "boost"
-			state.thermostatOperatingState = "Boost"
+			state.thermostatOperatingState = "boost"
 			state.switch = "on"
 		}
 		if (cmd.value == 0){ //0 - 0x00 = eco
@@ -457,7 +485,7 @@
 		}
 		if (cmd.value == 15){ //15 - 0x0F = off
 			state.thermostatMode = "Switched off"
-			state.thermostatOperatingState = "Frost"
+			state.thermostatOperatingState = "frost"
 			state.switch = "off"
 		}
 		if (cmd.value == 254){     //254 - 0xFE = direct valve contol mode
@@ -494,7 +522,7 @@
 		}
 		if (cmd.mode == 0){ // 0 off 0x00
 			state.thermostatMode = "switched off"
-			state.thermostatOperatingState = "Frost"
+			state.thermostatOperatingState = "frost"
 			state.switch = "off"
 		}
 		if (cmd.mode == 31){ // 31 dvc 0xFE
@@ -519,9 +547,9 @@
 		supportedModes << "cool" //eco //removed 4/2/19 == true)
 		supportedModes << "auto" 
 		//supportedModes << "emergency heat" //Boost
-		log.debug "$supportedModes"
+		//log.debug "$supportedModes"
 		state.supportedModes = supportedModes //.toString()
-		log.info "Thermostat supported modes : ${state.supportedModes}"
+		//log.info "Thermostat supported modes : ${state.supportedModes}"
 			
 		//updateDataValue("availableThermostatModes", supportedModes.toString())
 		sendEvent(name: "supportedThermostatModes", value: supportedModes, displayed: false)
@@ -578,7 +606,204 @@
 
 	def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport cmd ) {
 		log.info "Report Received : $cmd"
+		def events = []
+
+		switch (cmd.parameterNumber) {
+
+			case 1:
+			events << processParam1(cmd)
+
+			break
+			
+			case 2:
+			events << processParam2(cmd)
+			break
+			
+			case 3:
+			events << processParam3(cmd)
+			break
+			
+			case 4:
+			events << processParam4(cmd)
+			break
+			
+			case 5:
+			events << processParam5(cmd)
+			break
+			
+			case 6:
+			events << processParam6(cmd)
+			break
+			
+			case 7:
+			events << processParam7(cmd)
+			break
+			
+			case 8:
+			events << processParam8(cmd)
+			break
+		}
 	}
+
+//LCDinvert	
+private processParam1(cmd) {
+	def setValue
+		if (cmd.scaledConfigurationValue == 0) {
+		setValue = "No"
+		}
+		if (cmd.scaledConfigurationValue == 1) {
+		setValue = "Yes"
+		}
+		
+	log.info "LCDinvert: ${setValue}"
+	settings.$LCDinvert = setValue
+}
+
+//LCDtimeout
+private processParam2(cmd) {
+	def setValue
+	setValue = cmd.scaledConfigurationValue
+	
+	log.info "LCDtimeout: ${setValue}"
+	settings.$LCDtimeout = setValue
+}
+
+//backlight
+private processParam3(cmd) {
+	def setValue
+	//log.trace "$cmd.scaledConfigurationValue"
+		
+		if (cmd.scaledConfigurationValue == 0) {
+		setValue = "No"
+		}
+		if (cmd.scaledConfigurationValue == 1) {
+		setValue = "Yes"
+		}
+		
+	log.info "backlight: ${setValue}"
+	settings.$backlight = setValue
+}
+
+//battery
+private processParam4(cmd) {
+	def setValue
+	//log.trace "$cmd.scaledConfigurationValue"
+		
+		if (cmd.scaledConfigurationValue == 0) {
+		setValue = "Event only"
+		}
+		if (cmd.scaledConfigurationValue == 1) {
+		setValue = "Once a day"
+		}
+	log.info "battery notification: ${setValue}"
+	settings.$battNotification = setValue
+}
+
+//temp report threshold
+private processParam5(cmd) {
+	def setValue
+	//log.trace "$cmd.scaledConfigurationValue"
+		
+		if (cmd.scaledConfigurationValue == 0) {
+		setValue = "Off - Default"
+		}
+		if (cmd.scaledConfigurationValue == 1) {
+		setValue = "Report 0.1 degree temperature change"
+		}
+		if (cmd.scaledConfigurationValue == 2) {
+		setValue = "Report 0.2 degree temperature change"
+		}
+		if (cmd.scaledConfigurationValue == 3) {
+		setValue = "Report 0.3 degree temperature change"
+		}
+		if (cmd.scaledConfigurationValue == 5) {
+		setValue = "Report 0.5 degree temperature change"
+		}
+		if (cmd.scaledConfigurationValue == 8) {
+		setValue = "Report 0.8 degree temperature change"
+		}
+		if (cmd.scaledConfigurationValue == 10) {
+		setValue = "Report 1.0 degree temperature change"
+		}
+		if (cmd.scaledConfigurationValue == 15) {
+		setValue = "Report 1.5 degree temperature change"
+		}
+		if (cmd.scaledConfigurationValue == 20) {
+		setValue = "Report 2.0 degree temperature change"
+		}
+		if (cmd.scaledConfigurationValue == 30) {
+		setValue = "Report 3.0 degree temperature change"
+		}
+		if (cmd.scaledConfigurationValue == 50) {
+		setValue = "Report 3.5 degree temperature change"
+		}
+	log.info "Temp report: ${setValue}"
+	settings.$tempReport = setValue
+}
+
+//valve report
+private processParam6(cmd) {
+	def setValue
+	//log.trace "$cmd.scaledConfigurationValue"
+		
+		if (cmd.scaledConfigurationValue == 0) {
+		setValue = "Off - Default"
+		}
+		if (cmd.scaledConfigurationValue == 1) {
+		setValue = "Report 1% valve movement"
+		}
+		if (cmd.scaledConfigurationValue == 2) {
+		setValue = "Report 2% valve movement"
+		}
+		if (cmd.scaledConfigurationValue == 5) {
+		setValue = "Report 5% valve movement"
+		}
+		if (cmd.scaledConfigurationValue == 10) {
+		setValue = "Report 10% valve movement"
+		}
+		if (cmd.scaledConfigurationValue == 20) {
+		setValue = "Report 20% valve movement"
+		}
+		if (cmd.scaledConfigurationValue == 30) {
+		setValue = "Report 30% valve movement"
+		}
+		if (cmd.scaledConfigurationValue == 50) {
+		setValue = "Report 50% valve movement"
+		}
+	log.info "Valve report: ${setValue}"
+	settings.$valveReport = setValue
+}
+	
+//window open	
+private processParam7(cmd) {
+	def setValue
+	//log.trace "$cmd.scaledConfigurationValue"
+		
+		if (cmd.scaledConfigurationValue == 0) {
+		setValue = "Disabled"
+		}
+		if (cmd.scaledConfigurationValue == 1) {
+		setValue = "Low"
+		}
+		if (cmd.scaledConfigurationValue == 2) {
+		setValue = "Medium"
+		}
+		if (cmd.scaledConfigurationValue == 3) {
+		setValue = "High"
+		}
+	log.info "Window open detection: ${setValue}"
+	settings.windowOpen = setValue
+}
+
+//temp offset
+private processParam8(cmd) {
+	def setValue
+	//log.trace "$cmd.scaledConfigurationValue"
+		
+	setValue = cmd.scaledConfigurationValue
+	log.info "Temp offset: ${setValue}"
+	settings.$tempOffset = setValue
+}
 
 
 	//handle commands
@@ -636,8 +861,14 @@
 		sendEvent(name:"nextHeatingSetpoint", value: degrees, unit: getTemperatureScale(), descriptionText: "Next heating setpoint is ${degrees}", offdisplayed: true, isStateChange:true)
 		sendEvent(name:"nextHeatingSetpoint", value: degrees, unit: getTemperatureScale(), descriptionText: "Next heating setpoint is ${degrees}", displayed: true, isStateChange:true)
 		
-		cmds << zwave.thermostatSetpointV2.thermostatSetpointSet(precision: precision, scale: deviceScale, scaledValue: degrees, setpointType: 1)
-		cmds << zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 1)
+		if (device.currentValue("thermostatOperatingState") != "eco") {
+			cmds << zwave.thermostatSetpointV2.thermostatSetpointSet(precision: precision, scale: deviceScale, scaledValue: degrees, setpointType: 1)
+			cmds << zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 1)
+		}
+		if (device.currentValue("thermostatOperatingState") == "eco") {
+			cmds << zwave.thermostatSetpointV2.thermostatSetpointSet(precision: precision, scale: deviceScale, scaledValue: degrees, setpointType: 11)
+			cmds << zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 11)
+		}
 				
 		log.trace "Setting Temp to ${degrees},  $cmds"
 		secureSequence(cmds)
@@ -685,6 +916,7 @@
 		sendEvent(name: "thermostatMode", value: "heat", displayed: true)
 		cmds << zwave.thermostatModeV2.thermostatModeSet(mode: 0x0F)
 		cmds << zwave.thermostatModeV2.thermostatModeGet()
+		cmds <<	zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 1)
 		log.trace "heat On $cmds"
 		secureSequence(cmds)
 	}
@@ -694,6 +926,7 @@
 		sendEvent(name: "thermostatMode", value: "auto", displayed: true)
 		cmds << zwave.thermostatModeV2.thermostatModeSet(mode: 1)
 		cmds << zwave.thermostatModeV2.thermostatModeGet()
+		cmds <<	zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 1)
 		log.trace "auto $cmds" 
 		secureSequence (cmds)
 	}
@@ -711,6 +944,7 @@
 		sendEvent(name: "thermostatMode", value: "switched off", displayed: true)
 		cmds << zwave.thermostatModeV2.thermostatModeSet(mode: 0)
 		cmds << zwave.thermostatModeV2.thermostatModeGet()
+		cmds <<	zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 1)
 		log.trace "froston $cmds" 
 		secureSequence(cmds)
 	}
@@ -731,12 +965,15 @@
 		sendEvent(name: "thermostatMode", value: "off", displayed: true)
 		cmds << zwave.thermostatModeV2.thermostatModeSet(mode: 31)
 		cmds << zwave.thermostatModeV2.thermostatModeGet()
+		cmds <<	zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 1)
 		
-		setLevel(maintLevel)
+
 		//cmds << zwave.switchMultilevelV3.switchMultilevelSet(value: maintLevel)
 			//cmds << zwave.switchMultilevelV3.switchMultilevelGet()
 		log.trace "DVC On : $cmds"
 		secureSequence(cmds)
+		
+		//runIn(05, setLevel[maintLevel])
 	}
 	  
 	def dvcoff(){
@@ -748,7 +985,9 @@
 		sendEvent(name: "thermostatMode", value: "eco", displayed: true)
 		cmds << zwave.thermostatModeV2.thermostatModeSet(mode: 11)
 		cmds << zwave.thermostatModeV2.thermostatModeGet()
-		log.trace "Eco/Cool Heat $cmds"
+		cmds <<	zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 11)
+		
+		log.trace "Eco/Cool $cmds"
 		secureSequence(cmds)
 	}
 	 
@@ -781,7 +1020,7 @@
 		def setLevel(nextLevel) {
 			def cmds = []
 
-			sendEvent(name:"level", value: nextLevel, displayed: true, isStateChange:true)
+			sendEvent(name:"switch level", value: nextLevel, displayed: true, isStateChange:true)
 			
 			cmds << zwave.switchMultilevelV3.switchMultilevelSet(value: nextLevel)
 			cmds << zwave.switchMultilevelV3.switchMultilevelGet()
@@ -805,15 +1044,26 @@
 		//log.debug "valveReport : $valveReport"
 		//log.debug "refreshRate : $refreshRate"
 		def cmds = []
-		cmds << zwave.configurationV1.configurationSet(configurationValue:  LCDinvert == "Yes" ? [0x01] : [0x00], parameterNumber:1, size:1, scaledConfigurationValue:  LCDinvert == "Yes" ? 0x01 : 0x00)//,
+		//cmds << zwave.configurationV1.configurationSet(configurationValue:  LCDinvert == "Yes" ? [0x01] : [0x00], parameterNumber:1, size:1, scaledConfigurationValue:  LCDinvert == "Yes" ? 0x01 : 0x00)//,
+		cmds << zwave.configurationV1.configurationSet(configurationValue:  LCDinvert == "1" ? [0x01] : [0x00], parameterNumber:1, size:1, scaledConfigurationValue:  LCDinvert == "1" ? 0x01  : 0x00)
+		
 		cmds << zwave.configurationV1.configurationSet(configurationValue: LCDtimeout == null ? [0] : [LCDtimeout], parameterNumber:2, size:1, scaledConfigurationValue: LCDtimeout == null ? 0 :  LCDtimeout)//,
-		cmds << zwave.configurationV1.configurationSet(configurationValue:  backlight == "Yes" ? [0x01] : [0x00], parameterNumber:3, size:1, scaledConfigurationValue:  backlight == "Yes" ? 0x01 : 0x00)//,
+		
+		cmds << zwave.configurationV1.configurationSet(configurationValue:  backlight == "1" ? [0x01] : [0x00], parameterNumber:3, size:1, scaledConfigurationValue:  backlight == "1" ? 0x01 : 0x00)//
+		
 		cmds << zwave.configurationV1.configurationSet(configurationValue:  battNotification == "Event only" ? [0x00] : [0x01], parameterNumber:4, size:1, scaledConfigurationValue:  battNotification == "Event only" ? 0x00 : 0x01) //,
+		
 		cmds << zwave.configurationV1.configurationSet(configurationValue:  tempReport == "1" ? [0x01] : tempReport == "2" ? [0x02] : tempReport == "5" ? [0x05] : tempReport == "8" ? [0x08] : tempReport == "10" ? [0x0A] : tempReport == "15" ? [0x0F] : tempReport == "20" ? [0x14] : tempReport == "30" ? [0x1E] : tempReport == "50" ? [0x32] : [0x00], parameterNumber:5, size:1, scaledConfigurationValue:  tempReport == "1" ? 0x01 : tempReport == "2" ? 0x02 : tempReport == "5" ? 0x05 : tempReport == "8" ? 0x08 : tempReport == "10" ? 0x0A : tempReport == "15" ? 0x0E : tempReport == "20" ? 0x14 : tempReport == "30" ? 0x1E : tempReport == "50" ? 0x32 : 0x00)//,
+		
 		cmds << zwave.configurationV1.configurationSet(configurationValue:  valveReport == "1" ? [0x01] : valveReport == "2" ? [0x02] : valveReport == "5" ? [0x05] : valveReport == "10" ? [0x0A] : valveReport == "20" ? [0x14] : valveReport == "30" ? [0x1E] : valveReport == "50" ? [0x32] : [0x00], parameterNumber:6, size:1, scaledConfigurationValue:  valveReport == "1" ? 0x01 : valveReport == "2" ? 0x02 : valveReport == "5" ? 0x05 : valveReport == "10" ? 0x0A : valveReport == "20" ? 0x14 : valveReport == "30" ? 0x1E : valveReport == "50" ? 0x32 : 0x00)//,
-		cmds << zwave.configurationV1.configurationSet(configurationValue:  windowOpen == "Disabled" ? [0x00] : windowOpen == "Low" ? [0x01] : windowOpen == "High" ? [0x03] : [0x02], parameterNumber:7, size:1, scaledConfigurationValue: windowOpen == "Disabled" ? 0x00 : windowOpen == "Low" ? 0x01 : windowOpen == "High" ? 0x03 : 0x02)//,	
+		
+		cmds << zwave.configurationV1.configurationSet(configurationValue:  windowOpen == "0" ? [0x00] : windowOpen == "1" ? [0x01] : windowOpen == "3" ? [0x03] : [0x02], parameterNumber:7, size:1, scaledConfigurationValue: windowOpen == "0" ? 0x00 : windowOpen == "1" ? 0x01 : windowOpen == "3" ? 0x03 : 0x02)//,	
+		
 		cmds << zwave.configurationV1.configurationSet(configurationValue: tempOffset == null ? [0] : [tempOffset*10], parameterNumber:8, size:1, scaledConfigurationValue: tempOffset == null ? 0 : tempOffset*10)//,
+		
 		cmds << zwave.thermostatSetpointV1.thermostatSetpointSet(precision: 1, reserved01: 0, scale: 0, scaledValue: ecoTemp == null ? 18 : ecoTemp, setpointType: 11, size: 2, value: ecoTemp == null ? [0, 180] : [0, ecoTemp*10])//,
+		
+		//log.debug "$cmds"
 		cmds << zwave.sensorMultilevelV5.sensorMultilevelGet(sensorType:1, scale:1)  // get temp
 		cmds << zwave.thermostatModeV2.thermostatModeGet()
 		cmds << zwave.thermostatSetpointV1.thermostatSetpointGet(setpointType: 0x01)
@@ -922,23 +1172,3 @@
 		sendHubCommand(commands.collect{ response(secure(it)) }, delay)
 	}	
 								
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
