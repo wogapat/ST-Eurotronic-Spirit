@@ -25,7 +25,7 @@
 	 *
 	 */
 	metadata {
-		definition (name: "Eurotronic Spirit TRV + DVC - Test", namespace: "wogapat", author: "Patrick Wogan", cstHandler: true) {
+		definition (name: "Eurotronic Spirit TRV + DVC", namespace: "wogapat", author: "Patrick Wogan", cstHandler: true) {
 			capability "Actuator"
 			capability "Sensor"
 			capability "Battery"
@@ -304,7 +304,7 @@
 			tempReportRates << ["5" : "Report 0.5 degree temperature change"] // 0x05
 			tempReportRates << ["8" : "Report 0.8 degree temperature change"] // 0x08
 			tempReportRates << ["10" : "Report 1.0 degree temperature change"] // 0x0A
-			tempReportRates << ["15" : "Report 1.5 degree temperature change"] // 0x0E
+			tempReportRates << ["15" : "Report 1.5 degree temperature change"] // 0x0F
 			tempReportRates << ["20" : "Report 2.0 degree temperature change"] // 0x14
 			tempReportRates << ["30" : "Report 3.0 degree temperature change"] // 0x1E
 			tempReportRates << ["50" : "Report 5.0 degree temperature change"] // 0x32
@@ -702,7 +702,7 @@ private processParam4(cmd) {
 //temp report threshold
 private processParam5(cmd) {
 	def setValue
-	//log.trace "$cmd.scaledConfigurationValue"
+	//log.debug "$cmd.scaledConfigurationValue"
 		
 		if (cmd.scaledConfigurationValue == 0) {
 		setValue = "Off - Default"
@@ -722,7 +722,7 @@ private processParam5(cmd) {
 		if (cmd.scaledConfigurationValue == 8) {
 		setValue = "Report 0.8 degree temperature change"
 		}
-		if (cmd.scaledConfigurationValue == 10) {
+		if (cmd.scaledConfigurationValue == 15) {
 		setValue = "Report 1.0 degree temperature change"
 		}
 		if (cmd.scaledConfigurationValue == 15) {
@@ -735,8 +735,9 @@ private processParam5(cmd) {
 		setValue = "Report 3.0 degree temperature change"
 		}
 		if (cmd.scaledConfigurationValue == 50) {
-		setValue = "Report 3.5 degree temperature change"
+		setValue = "Report 5.0 degree temperature change"
 		}
+    //log.debug "$tempReport"
 	log.info "Temp report: ${setValue}"
 	settings.$tempReport = setValue
 }
@@ -1053,7 +1054,7 @@ private processParam8(cmd) {
 		
 		cmds << zwave.configurationV1.configurationSet(configurationValue:  battNotification == "Event only" ? [0x00] : [0x01], parameterNumber:4, size:1, scaledConfigurationValue:  battNotification == "Event only" ? 0x00 : 0x01) //,
 		
-		cmds << zwave.configurationV1.configurationSet(configurationValue:  tempReport == "1" ? [0x01] : tempReport == "2" ? [0x02] : tempReport == "5" ? [0x05] : tempReport == "8" ? [0x08] : tempReport == "10" ? [0x0A] : tempReport == "15" ? [0x0F] : tempReport == "20" ? [0x14] : tempReport == "30" ? [0x1E] : tempReport == "50" ? [0x32] : [0x00], parameterNumber:5, size:1, scaledConfigurationValue:  tempReport == "1" ? 0x01 : tempReport == "2" ? 0x02 : tempReport == "5" ? 0x05 : tempReport == "8" ? 0x08 : tempReport == "10" ? 0x0A : tempReport == "15" ? 0x0E : tempReport == "20" ? 0x14 : tempReport == "30" ? 0x1E : tempReport == "50" ? 0x32 : 0x00)//,
+		cmds << zwave.configurationV1.configurationSet(configurationValue:  tempReport == "1" ? [0x01] : tempReport == "2" ? [0x02] : tempReport == "5" ? [0x05] : tempReport == "8" ? [0x08] : tempReport == "10" ? [0x0A] : tempReport == "15" ? [0x0F] : tempReport == "20" ? [0x14] : tempReport == "30" ? [0x1E] : tempReport == "50" ? [0x32] : [0x00], parameterNumber:5, size:1, scaledConfigurationValue:  tempReport == "1" ? 0x01 : tempReport == "2" ? 0x02 : tempReport == "5" ? 0x05 : tempReport == "8" ? 0x08 : tempReport == "10" ? 0x0A : tempReport == "15" ? 0x0F : tempReport == "20" ? 0x14 : tempReport == "30" ? 0x1E : tempReport == "50" ? 0x32 : 0x00)//,
 		
 		cmds << zwave.configurationV1.configurationSet(configurationValue:  valveReport == "1" ? [0x01] : valveReport == "2" ? [0x02] : valveReport == "5" ? [0x05] : valveReport == "10" ? [0x0A] : valveReport == "20" ? [0x14] : valveReport == "30" ? [0x1E] : valveReport == "50" ? [0x32] : [0x00], parameterNumber:6, size:1, scaledConfigurationValue:  valveReport == "1" ? 0x01 : valveReport == "2" ? 0x02 : valveReport == "5" ? 0x05 : valveReport == "10" ? 0x0A : valveReport == "20" ? 0x14 : valveReport == "30" ? 0x1E : valveReport == "50" ? 0x32 : 0x00)//,
 		
