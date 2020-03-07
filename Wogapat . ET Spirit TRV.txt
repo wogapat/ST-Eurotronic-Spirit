@@ -12,15 +12,15 @@
 	 *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
 	 *  for the specific language governing permissions and limitations under the License.
 	 *
-	 ***************************Version 12******************************************
+	 ***************************Version 13******************************************
 	 *
 	 * Icons
 	 * Lock - Icons made by Chanut from www.flaticon.com 
 	 * Fire - Icons made by Good Warefrom www.flaticon.com
 	 * Leaf - Icons made by Pixel perfect from www.flaticon.com
-	 * Pipe, switch, growth, Snowflake, forbidden, levelup - Icons made by Freepik from ww.flaticon.com
-	 * Refresh - Icons made by Google from ww.flaticon.com
-	 * toggle, battery - Icons made by Those Icons from ww.flaticon.com
+	 * Pipe, switch, growth, Snowflake, forbidden, levelup - Icons made by Freepik from www.flaticon.com
+	 * Refresh - Icons made by Google from www.flaticon.com
+	 * toggle, battery - Icons made by Those Icons from www.flaticon.com
 	 *
 	 *
 	 */
@@ -49,9 +49,9 @@
 			command "froston"
 			command "frostoff"
 			command "temperatureUp"
+			command "temperatureDown"
 			command "dvcon"
 			command "dvcoff"
-			command "temperatureDown"
 			command "Poll"
 			command "setCoolingSetpoint"
 
@@ -271,10 +271,20 @@
 			LCDinvertOptions << ["0" : "No"] // 0x00
 			LCDinvertOptions << ["1" : "Yes"] // 0x01
 			
+		//options for LCDtimeout
+		def LCDtimeoutOptions = [:]
+			LCDtimeoutOptions << ["0" : "Always on"] // 0x00
+			LCDtimeoutOptions << ["5" : "5 seconds"] // 0x05
+			LCDtimeoutOptions << ["10" : "10 seconds"] // 0x0A
+			LCDtimeoutOptions << ["15" : "15 seconds"] // 0x0F
+			LCDtimeoutOptions << ["20" : "20 seconds"] // 0x14
+			LCDtimeoutOptions << ["30" : "30 seconds"] // 0x1E
+			
+			
 		//options for backlight
 		def backlightOptions = [:]
-			backlightOptions << ["0" : "No"] // 0x00
-			backlightOptions << ["1" : "Yes"] // 0x01
+			backlightOptions << ["0" : "Disabled"] // 0x00
+			backlightOptions << ["1" : "Enabled"] // 0x01
 			
 		//options for battery notification
 		def batteryNotOptions = [:]
@@ -288,17 +298,10 @@
 			windowDetectOptions << ["2" : "Medium"] // 0x02
 			windowDetectOptions << ["3" : "High"] // 0x03
 			
-		//Rates for Poll
-		def rates = [:]
-			rates << ["0" : "Off - Set temperature, valve & battery reports, if required"]
-			rates << ["1" : "Refresh every minute (Not recommended)"]
-			rates << ["5" : "Default - Refresh every 5 minutes"]
-			rates << ["10" : "Refresh every 10 minutes"]
-			rates << ["15" : "Refresh every 15 minutes"]
 				
 		//Thresholds for TRV Temp report
 		def tempReportRates = [:] // // 0x00 Unsolicited Temperature reporting disabled 0x01 – 0x32 report if temperature changed by delta = 0,1°C … 5,0 °C default 0x05 (report on delta T = 0,5°C)
-			tempReportRates << ["0" : "Off - Default"] // 0x00
+			tempReportRates << ["0" : "Disabled"] // 0x00
 			tempReportRates << ["1" : "Report 0.1 degree temperature change"] // 0x01
 			tempReportRates << ["2" : "Report 0.2 degree temperature change"] // 0x02
 			tempReportRates << ["5" : "Report 0.5 degree temperature change"] // 0x05
@@ -311,7 +314,7 @@
 		
 		//Thresholds for TRV valve report
 		def valveReportRates = [:] // 0x00 Unsolicited valve opening percentage reporting disabled 0x01-0x64 report if valve opening changed by delta = 1% … 100%  default 0x00
-			valveReportRates << ["0" : "Off - Default"] // 0x00
+			valveReportRates << ["0" : "Disabled"] // 0x00
 			valveReportRates << ["1" : "Report 1% valve movement"] // 0x01
 			valveReportRates << ["2" : "Report 2% valve movement"] // 0x02
 			valveReportRates << ["5" : "Report 5% valve movement"] // 0x32
@@ -319,33 +322,48 @@
 			valveReportRates << ["20" : "Report 20% valve movement"] // 0x14
 			valveReportRates << ["30" : "Report 30% valve movement"] // 0x1E
 			valveReportRates << ["50" : "Report 50% valve movement"] // 0x32
-		
+			
+		//Rates for Poll
+		def rates = [:]
+			rates << ["0" : "Disabled - Set temperature, valve & battery reports, if required"]
+			rates << ["1" : "Refresh every minute (Not recommended)"]
+			rates << ["5" : "Refresh every 5 minutes"]
+			rates << ["10" : "Refresh every 10 minutes"]
+			rates << ["15" : "Refresh every 15 minutes"]
+			
+		//options for Push
+		def pushOptions = [:]
+			pushOptions << ["0" : "Disabled"] // 0x00
+			pushOptions << ["1" : "Enabled"] // 0x01
+			
 		//Settings Page
 		preferences {
 			//parameter 1
-			input "LCDinvert", "enum", title: "Invert LCD", options: LCDinvertOptions, required: false, displayDuringSetup: true
+			input "LCDinvert", "enum", title: "Invert LCD", options: LCDinvertOptions, description: "No - Default", defaultValue: "0", required: false, displayDuringSetup: true
 			//parameter 2
-			input "LCDtimeout", "number", title: "LCD timeout (in secs)", description: "LCD off after: (5 - 30secs)", range: "5..30", displayDuringSetup: true
-			//custom parameter
-			input "ecoTemp", "number", title: "Eco heating setpoint", description: "Set eco heating setpoint : (8 - 28°C)", range: "8..28", displayDuringSetup: false
+			input "LCDtimeout", "enum", title: "LCD timeout (in secs)", options: LCDtimeoutOptions, description: "Always on - Default", defaultValue: "1", displayDuringSetup: true
 			//parameter 3
-			input "backlight", "enum", title: "Enable backlight", options: backlightOptions, required: false, displayDuringSetup: true
+			input "backlight", "enum", title: "Enable backlight", options: backlightOptions, description: "Enabled - Default", defaultValue: "1", required: false, displayDuringSetup: true
 			//parameter 4 
-			input "battNotification", "enum", title: "Battery notification", options: batteryNotOptions, required: false, displayDuringSetup: true // 0x00 Battery status is only reported as a system notification (Notification CC)  0x01 Send battery status unsolicited once a day default: 0x01
+			input "battNotification", "enum", title: "Battery notification", options: batteryNotOptions, description: "Once a day - Default", defaultValue: "1", required: false, displayDuringSetup: true // 0x00 Battery status is only reported as a system notification (Notification CC)  0x01 Send battery status unsolicited once a day default: 0x01
 			//parameter 5
-			input "tempReport", "enum", title: "Temperature report threshold", description: "Set device thresholds to report temperature changes", options: tempReportRates, defaultValue: "Off - Default", required: false, displayDuringSetup: false
+			input "tempReport", "enum", title: "Temperature report threshold", options: tempReportRates, description: "report on delta T = 0,5°C - Default", defaultValue: "5", required: false, displayDuringSetup: false
 			//parameter 6
-			input "valveReport", "enum", title: "Valve report threshold", description: "Set device thresholds to report valve changes", options: valveReportRates, defaultValue: "Off - Default", required: false, displayDuringSetup: false
+			input "valveReport", "enum", title: "Valve report threshold", description: "Disabled - Default", options: valveReportRates, defaultValue: "0", required: false, displayDuringSetup: false
 			//parameter 7
-			input "windowOpen", "enum", title: "Window open detection sensitivity",description: "Window open detection sensitivity", options: windowDetectOptions, defaultValue: "Medium", required: false, displayDuringSetup: false
+			input "windowOpen", "enum", title: "Window open detection sensitivity",description: "Medium - Default", options: windowDetectOptions, defaultValue: "2", required: false, displayDuringSetup: false
 			//parameter 8
 			input "tempOffset", "number", title: "Temperature offset", description: "Set temperature offset : (-5 to +5°C)", range: "-5..5", displayDuringSetup: false
+			//custom parameter
+			input "ecoTemp", "number", title: "Eco heating setpoint", description: "18 - Default. Range: (8 - 28°C)", range: "8..28", defaultValue: "18", displayDuringSetup: false
 			// custom paramater
 			input "tempMin", "number", title: "Min temperature recorded", description: "default 8 : (range 8 to 10°C)", range: "8..10", displayDuringSetup: false
 			// custom parameter
 			input "tempMax", "number", title: "Max temperature recorded", description: "default 28 : (range 25 to 28°C)", range: "25..28", displayDuringSetup: false
 			// custom parameter
-			input name: "refreshRate", type: "enum", title: "Refresh Rate", options: rates, description: "Select refresh rate", defaultValue: "Default - Refresh every 5 minutes", required: false
+			input name: "refreshRate", type: "enum", title: "Refresh rate", options: rates, description: "Select refresh rate", defaultValue: "5", required: false
+			// custom parameter
+			input name: "pushNot", type: "enum", title: "Push notifications (system Events)", options: pushOptions, description: "On - Default", defaultValue: "1", required: false
 		}
 		
 	// parse events into attributes
@@ -556,12 +574,61 @@ def zwaveEvent(physicalgraph.zwave.commands.thermostatsetpointv2.ThermostatSetpo
 		log.info "Report Received : $cmd, Thermostat supported modes : $supportedModes"
 	}
 
-	/*def zwaveEvent(physicalgraph.zwave.commands.notificationv1.notificationReport cmd) {
-		log.debug "Notification Report : $cmd"
-	}*/
+	def zwaveEvent(physicalgraph.zwave.commands.notificationv3.NotificationReport cmd) {
+		log.trace "$cmd"
+		def events = []
+		switch (cmd.notificationType) {
+			case 8:
+			events << processPowerMgtNot(cmd)
+			break
 
+			case 9:
+			events << processSystemNot(cmd)
+			break
+		}
+		log.info "Notification Report : $cmd"
+	}
 
+	private processPowerMgtNot(cmd) {
+		def descriptionText
+		if (cmd.event == 10) {
+			descriptionText = "replace battery soon"
+		}
+		if (cmd.event == 11) {
+			descriptionText = "replace battery now"
+		}
 
+		
+		if (setting.$pushNot == 1) {
+		sendPush("${device.displayName}: $descriptionText")
+		}
+		
+		log.info "Power management, $descriptionText"
+	}
+	
+	private processSystemNot(cmd) {
+		def descriptionText
+		log.debug "$cmd.eventParameter"
+		if (cmd.eventParameter == 1) {
+			descriptionText = "Motor movement not possible"
+		}
+		if (cmd.eventParameter == 2) {
+			descriptionText = "Not mounted on a valve"
+		}
+		if (cmd.eventParameter == 3) {
+			descriptionText = "Valve closing point could not be detected"
+		}
+		if (cmd.eventParameter == 4) {
+			descriptionText = "Piston positioning failed"	
+		}
+
+		if (setting.$pushNot == 1) {
+			sendPush("${device.displayName}: $descriptionText")
+		}
+		
+		log.info "System event: $descriptionText"
+	}
+	
 	def zwaveEvent(physicalgraph.zwave.commands.associationv2.AssociationReport cmd) {
 		def result = []
 		if (cmd.nodeId.any { it == zwaveHubNodeId }) {
@@ -645,6 +712,8 @@ def zwaveEvent(physicalgraph.zwave.commands.thermostatsetpointv2.ThermostatSetpo
 		}
 	}
 
+
+
 //LCDinvert	
 private processParam1(cmd) {
 	def setValue
@@ -662,8 +731,25 @@ private processParam1(cmd) {
 //LCDtimeout
 private processParam2(cmd) {
 	def setValue
-	setValue = cmd.scaledConfigurationValue
-	
+		if (cmd.scaledConfigurationValue == 0) {
+		setValue = "Always on"
+		}
+		if (cmd.scaledConfigurationValue == 5) {
+		setValue = "5 Seconds"
+		}
+		if (cmd.scaledConfigurationValue == 10) {
+		setValue = "10 Seconds"
+		}
+		if (cmd.scaledConfigurationValue == 15) {
+		setValue = "15 Seconds"
+		}
+		if (cmd.scaledConfigurationValue == 20) {
+		setValue = "20 Seconds"
+		}
+		if (cmd.scaledConfigurationValue == 30) {
+		setValue = "30 Seconds"
+		}
+		
 	log.info "LCDtimeout: ${setValue}"
 	settings.$LCDtimeout = setValue
 }
@@ -674,10 +760,10 @@ private processParam3(cmd) {
 	//log.trace "$cmd.scaledConfigurationValue"
 		
 		if (cmd.scaledConfigurationValue == 0) {
-		setValue = "No"
+		setValue = "Disabled"
 		}
 		if (cmd.scaledConfigurationValue == 1) {
-		setValue = "Yes"
+		setValue = "Enabled"
 		}
 		
 	log.info "backlight: ${setValue}"
@@ -705,7 +791,7 @@ private processParam5(cmd) {
 	//log.debug "$cmd.scaledConfigurationValue"
 		
 		if (cmd.scaledConfigurationValue == 0) {
-		setValue = "Off - Default"
+		setValue = "Disabled"
 		}
 		if (cmd.scaledConfigurationValue == 1) {
 		setValue = "Report 0.1 degree temperature change"
@@ -748,7 +834,7 @@ private processParam6(cmd) {
 	//log.trace "$cmd.scaledConfigurationValue"
 		
 		if (cmd.scaledConfigurationValue == 0) {
-		setValue = "Off - Default"
+		setValue = "Disabled"
 		}
 		if (cmd.scaledConfigurationValue == 1) {
 		setValue = "Report 1% valve movement"
@@ -1041,14 +1127,11 @@ private processParam8(cmd) {
 	def configure() {
 		state.supportedModes = [off,heat, eco, Boost, dvc] // basic modes prior to details from device
 		setDeviceLimits()
-		//log.debug "tempReport : $tempReport"
-		//log.debug "valveReport : $valveReport"
-		//log.debug "refreshRate : $refreshRate"
+
 		def cmds = []
-		//cmds << zwave.configurationV1.configurationSet(configurationValue:  LCDinvert == "Yes" ? [0x01] : [0x00], parameterNumber:1, size:1, scaledConfigurationValue:  LCDinvert == "Yes" ? 0x01 : 0x00)//,
 		cmds << zwave.configurationV1.configurationSet(configurationValue:  LCDinvert == "1" ? [0x01] : [0x00], parameterNumber:1, size:1, scaledConfigurationValue:  LCDinvert == "1" ? 0x01  : 0x00)
 		
-		cmds << zwave.configurationV1.configurationSet(configurationValue: LCDtimeout == null ? [0] : [LCDtimeout], parameterNumber:2, size:1, scaledConfigurationValue: LCDtimeout == null ? 0 :  LCDtimeout)//,
+		cmds << zwave.configurationV1.configurationSet(configurationValue:  LCDtimeout == "5" ? [0x05] : LCDtimeout == "10" ? [0x0A] : LCDtimeout == "15" ? [0x0F] : LCDtimeout == "20" ? [0x14] : LCDtimeout == "30" ? [0x1E] : [0x00], parameterNumber:2, size:1, scaledConfigurationValue:  LCDtimeout == "5" ? 0x05 : LCDtimeout == "10" ? 0x0A : LCDtimeout == "15" ? 0x0F : LCDtimeout == "20" ? 0x14 : LCDtimeout == "30" ? 0x1E : 0x00)//,
 		
 		cmds << zwave.configurationV1.configurationSet(configurationValue:  backlight == "1" ? [0x01] : [0x00], parameterNumber:3, size:1, scaledConfigurationValue:  backlight == "1" ? 0x01 : 0x00)//
 		
@@ -1064,6 +1147,8 @@ private processParam8(cmd) {
 		
 		cmds << zwave.thermostatSetpointV1.thermostatSetpointSet(precision: 1, reserved01: 0, scale: 0, scaledValue: ecoTemp == null ? 18 : ecoTemp, setpointType: 11, size: 2, value: ecoTemp == null ? [0, 180] : [0, ecoTemp*10])//,
 		
+		//log.debug "$settings"
+		//log.debug "$LCDtimeout"
 		//log.debug "$cmds"
 		cmds << zwave.sensorMultilevelV5.sensorMultilevelGet(sensorType:1, scale:1)  // get temp
 		cmds << zwave.thermostatModeV2.thermostatModeGet()
