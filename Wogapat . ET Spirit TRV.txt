@@ -62,8 +62,8 @@
 
 			
 
-		fingerprint manufacturerId: "148"
-		fingerprint mfr: "0148", prod: "0003", model: "0001", cc: "5E,55,98,9F", sec: "86,85,59,72,5A,73,75,31,26,40,43,80,70,71,6C,7A", role: "07", ff: "9200", ui: "9200", deviceJoinName: "Eurotronic Spirit TRV"
+		fingerprint manufacturerId: "328"
+		fingerprint mfr: "0328", prod: "0003", model: "0001", cc: "5E,55,98,9F", sec: "86,85,59,72,5A,73,75,31,26,40,43,80,70,71,6C,7A", role: "07", ff: "9200", ui: "9200", deviceJoinName: "Eurotronic Spirit TRV"
 			
 			// 0x80 = Battery v1
 			// 0x70 = Configuration v1
