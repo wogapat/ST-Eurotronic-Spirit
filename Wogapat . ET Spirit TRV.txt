@@ -263,7 +263,7 @@
 				}
 					
 				main "temperature"
-				details(["temperature", "boostMode", "ecoMode", "lock", "frost", "dvcMode", "battery", "configure", "refresh", "trv", "setValve",])
+				details(["temperature", "boostMode", "ecoMode", "lock", "frost", "dvcMode", "battery", "configure", "refresh", "trv", "setValve"])
 				}
 			
 			
@@ -388,21 +388,20 @@
 		}
 			
 		//Battery
-		def zwaveEvent(physicalgraph.zwave.commands.batteryv1.BatteryReport cmd) {
-			def map = [ name: "battery", unit: "%" ]
-			if (cmd.batteryLevel == 0xFF) {  // Special value for low battery alert
-				map.value = 1
-				map.descriptionText = "${device.displayName} has a low battery"
-				map.isStateChange = true
-			} 
-			else {
-				map = [value: cmd.batteryLevel, displayed: true]
-
-			}
-			state.lastBatteryReportReceivedAt = new Date().time // Store time of last battery update so we don't ask every wakeup, see WakeUpNotification handler
-			log.info "Report Received : $cmd"
-			createEvent(map)
+	def zwaveEvent(physicalgraph.zwave.commands.batteryv1.BatteryReport cmd) {
+		def map = [ name: "battery", unit: "%" ]
+		if (cmd.batteryLevel == 0xFF) {  // Special value for low battery alert
+			map.value = 1
+			map.descriptionText = "${device.displayName} has a low battery"
+			map.isStateChange = true
+		} 
+		else {
+			map.value = cmd.batteryLevel
 		}
+		state.lastBatteryReportReceivedAt = new Date().time // Store time of last battery
+		log.info "Report Received : $cmd"
+		createEvent(map)
+	}
 
 		//Lock
 		def zwaveEvent(physicalgraph.zwave.commands.protectionv1.ProtectionReport cmd) {
@@ -1114,6 +1113,7 @@
 		def daysToTime(days) {
 				days*24*60*60*1000
 		}
+			
 		def configure() {
 			state.supportedModes = [off,heat, eco, Boost, dvc] // basic modes prior to details from device
 			setDeviceLimits()
@@ -1157,7 +1157,7 @@
 			cmds << zwave.protectionV1.protectionGet()
 			cmds << zwave.thermostatModeV2.thermostatModeSupportedGet()
 			cmds << zwave.manufacturerSpecificV1.manufacturerSpecificGet()
-			sendEvent(name: "configure") //value: "Configuration sent", displayed: false)   
+			sendEvent(name: "configuration", value: "sent", displayed: true) 
 			//log.trace "Configuration sent"
 			secureSequence(cmds)
 			}
