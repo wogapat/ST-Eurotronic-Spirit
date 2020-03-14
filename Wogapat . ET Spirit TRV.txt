@@ -12,7 +12,7 @@
 		 *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
 		 *  for the specific language governing permissions and limitations under the License.
 		 *
-		 ***************************Version 14******************************************
+		 ***************************Version 15******************************************
 		 *
 		 * Icons
 		 * Lock - Icons made by Chanut from www.flaticon.com 
@@ -21,11 +21,12 @@
 		 * Pipe, switch, growth, Snowflake, forbidden, levelup - Icons made by Freepik from www.flaticon.com
 		 * Refresh - Icons made by Google from www.flaticon.com
 		 * toggle, battery - Icons made by Those Icons from www.flaticon.com
+		 * switch-on - Icons made by freepik from www.flaticon.com
 		 *
 		 *
 		 */
 		metadata {
-			definition (name: "Eurotronic Spirit TRV + DVC", namespace: "wogapat", author: "Patrick Wogan", cstHandler: true) {
+			definition (name: "Eurotronic Spirit TRV + DVC v15", namespace: "wogapat", author: "Patrick Wogan", cstHandler: true) {
 				capability "Actuator"
 				capability "Sensor"
 				capability "Battery"
@@ -119,10 +120,11 @@
 						attributeState "Direct Valve Control", icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/toggle.png", backgroundColor:"#d04e00"
 					}
 
-					//Thermostat Mode on main tile - classic
+					//Thermostat Mode - classic
 					tileAttribute("device.thermostatMode", key: "THERMOSTAT_MODE") { 
 						attributeState "eco", label:'${name}', icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/leaf.png", backgroundColor:"#44b621"
 						attributeState "off", label:'${name}', icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/toggle.png", backgroundColor:"#44b621"
+						attributeState "on", label:'${name}', icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/switch-on.png"
 						attributeState "switched off", label:'${name}', icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/snowflake.png", backgroundColor:"#1e9cbb"
 						attributeState "auto", label:'${name}', icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/fire.png", backgroundColor:"#d04e00"
 						attributeState "heat", label:'${name}', icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/levelup.png", backgroundColor:"#bc2323"
@@ -340,19 +342,19 @@
 			//Settings Page
 			preferences {
 				//parameter 1
-				input "LCDinvert", "enum", title: "Invert LCD", options: LCDinvertOptions, description: "Invert LCD display", required: false, displayDuringSetup: true
+				input "LCDinvert", "enum", title: "LCD Display", options: LCDinvertOptions, description: "Default: No", required: false, displayDuringSetup: true
 				//parameter 2
-				input "LCDtimeout", "enum", title: "LCD timeout (in secs)", options: LCDtimeoutOptions, description: "Set LCD timeout", displayDuringSetup: true
+				input "LCDtimeout", "enum", title: "LCD timeout (in secs)", options: LCDtimeoutOptions, description: "Default: Always on", displayDuringSetup: true
 				//parameter 3
-				input "backlight", "enum", title: "Enable backlight", options: backlightOptions, description: "Enable / disable backlight", required: false, displayDuringSetup: true
+				input "backlight", "enum", title: "Backlight", options: backlightOptions, description: "Default: Disabled", required: false, displayDuringSetup: true
 				//parameter 4 
-				input "battNotification", "enum", title: "Battery notification", options: batteryNotOptions, description: "Set battery notification", defaultValue: "1", required: false, displayDuringSetup: true // 0x00 Battery status is only reported as a system notification (Notification CC)  0x01 Send battery status unsolicited once a day default: 0x01
+				input "battNotification", "enum", title: "Battery notification", options: batteryNotOptions, description: "Default: Once a day", required: false, displayDuringSetup: true // 0x00 Battery status is only reported as a system notification (Notification CC)  0x01 Send battery status unsolicited once a day default: 0x01
 				//parameter 5
-				input "tempReport", "enum", title: "Temperature report threshold", options: tempReportRates, description: "Set temperature report threshold", defaultValue: "0", required: false, displayDuringSetup: false
+				input "tempReport", "enum", title: "Temperature report threshold", options: tempReportRates, description: "Default: Disabled", required: false, displayDuringSetup: false
 				//parameter 6
-				input "valveReport", "enum", title: "Valve report threshold", description: "Set valve report threshold", options: valveReportRates, required: false, displayDuringSetup: false
+				input "valveReport", "enum", title: "Valve report threshold", description: "Default: Disabled", options: valveReportRates, required: false, displayDuringSetup: false
 				//parameter 7
-				input "windowOpen", "enum", title: "Window open detection sensitivity",description: "Set window open detection sensitivity", options: windowDetectOptions, required: false, displayDuringSetup: false
+				input "windowOpen", "enum", title: "Window open detection sensitivity",description: "Default: Medium", options: windowDetectOptions, required: false, displayDuringSetup: false
 				//parameter 8
 				input "tempOffset", "number", title: "Temperature offset", description: "Set temperature offset : (-5 to +5°C)", range: "-5..5", displayDuringSetup: false
 				//custom parameter
@@ -364,7 +366,7 @@
 				// custom parameter
 				input name: "refreshRate", type: "enum", title: "Refresh rate", options: rates, description: "Select refresh rate", defaultValue: "5", required: false
 				// custom parameter
-				input name: "pushNot", type: "enum", title: "Push notifications (system Events)", options: pushOptions, description: "Enable / Disable push", defaultValue: "1", required: false
+				input name: "pushNot", type: "enum", title: "Push notifications (system Events)", options: pushOptions, description: "Enable / Disable push", required: false
 			}
 			
 		// parse events into attributes
@@ -415,8 +417,9 @@
 			if (cmd.protectionState == 1) { //01 - locked
 				eventValue = "locked"
 			}
-			
+			if (device.currentValue("lock") != eventValue) {
 			event << createEvent(name: "lock", value: eventValue, displayed: true)
+			}
 			//lock.state = eventValue
 			log.info "Protection State - ${eventValue}"
 			return event
@@ -550,18 +553,13 @@
 			supportedModes << "heat" 
 			supportedModes << "cool" //eco //removed 4/2/19 == true)
 			supportedModes << "auto" 
-			//supportedModes << "emergency heat" //Boost
-			//log.debug "$supportedModes"
 			state.supportedModes = supportedModes //.toString()
-			//log.info "Thermostat supported modes : ${state.supportedModes}"
-				
 			//updateDataValue("availableThermostatModes", supportedModes.toString())
 			sendEvent(name: "supportedThermostatModes", value: supportedModes, displayed: false)
 			log.info "Report Received : $cmd, Thermostat supported modes : $supportedModes"
 		}
 
 		def zwaveEvent(physicalgraph.zwave.commands.notificationv3.NotificationReport cmd) {
-			log.trace "$cmd"
 			def events = []
 			switch (cmd.notificationType) {
 				case 8:
@@ -577,43 +575,49 @@
 
 		private processPowerMgtNot(cmd) {
 			def descriptionText
-			if (cmd.event == 10) {
-				descriptionText = "replace battery soon"
-			}
-			if (cmd.event == 11) {
+			if (cmd.eventParameter == []) {
+				descriptionText = "New batteries"
+			} else {
+				if (cmd.eventParameter == [10]) {
+					descriptionText = "replace battery soon"
+				}
+				if (cmd.eventParameter == [11]) {
 				descriptionText = "replace battery now"
+				}
 			}
-
-			
-			if (setting.$pushNot == 1) {
-			sendPush("${device.displayName}: $descriptionText")
+			if ($pushNot == 1) {
+			sendPush("${device.displayName}: Warning! $descriptionText")
 			}
 			
-			log.info "Power management, $descriptionText"
+			log.info "Power management event: Warning! $descriptionText"
 		}
 		
 		private processSystemNot(cmd) {
 			def descriptionText
-			log.debug "$cmd.eventParameter"
-			if (cmd.eventParameter == 1) {
-				descriptionText = "Motor movement not possible"
+			if (cmd.eventParameter == []) {
+				descriptionText = "Cleared"
+			} else {
+				if (cmd.eventParameter == [1]) {
+				descriptionText = "Warning! Motor movement not possible"
+				}
+				if (cmd.eventParameter == [2]) {
+				descriptionText = "Warning! Not mounted on a valve"
+				}
+				if (cmd.eventParameter == [3]) {
+				descriptionText = "Warning! Valve closing point could not be detected"
+				}
+				if (cmd.eventParameter == [4]) {
+				descriptionText = "Warning! Piston positioning failed"	
+				}
 			}
-			if (cmd.eventParameter == 2) {
-				descriptionText = "Not mounted on a valve"
-			}
-			if (cmd.eventParameter == 3) {
-				descriptionText = "Valve closing point could not be detected"
-			}
-			if (cmd.eventParameter == 4) {
-				descriptionText = "Piston positioning failed"	
-			}
-
-			if (setting.$pushNot == 1) {
+			if ($pushNot == 1) {
 				sendPush("${device.displayName}: $descriptionText")
+
 			}
-			
 			log.info "System event: $descriptionText"
 		}
+
+
 		
 		def zwaveEvent(physicalgraph.zwave.commands.associationv2.AssociationReport cmd) {
 			def result = []
@@ -950,7 +954,7 @@
 		//lock
 		def lock() {
 			def cmds = []
-			sendEvent(name: "lock", value: "locked", displayed: false)
+			sendEvent(name: "lock", value: "locking", displayed: false)
 			cmds << zwave.protectionV1.protectionSet(protectionState: 1)
 			cmds << zwave.protectionV1.protectionGet()
 			log.trace "locking $cmds" 
@@ -960,7 +964,7 @@
 		//unlock
 		def unlock() {
 			def cmds = []
-			sendEvent(name: "lock", value: "unlocked", displayed: false)
+			sendEvent(name: "lock", value: "unlocking", displayed: false)
 			cmds << zwave.protectionV1.protectionSet(protectionState: 0)
 			cmds << zwave.protectionV1.protectionGet()
 			log.trace "unlocking $cmds" 
