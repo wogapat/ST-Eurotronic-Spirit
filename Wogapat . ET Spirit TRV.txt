@@ -342,7 +342,7 @@
 			//Settings Page
 			preferences {
 				//parameter 1
-				input "LCDinvert", "enum", title: Invert LCD Display", options: LCDinvertOptions, description: "Default: No", required: false, displayDuringSetup: true
+				input "LCDinvert", "enum", title: "Invert LCD Display", options: LCDinvertOptions, description: "Default: No", required: false, displayDuringSetup: true
 				//parameter 2
 				input "LCDtimeout", "enum", title: "LCD timeout (in secs)", options: LCDtimeoutOptions, description: "Default: Always on", displayDuringSetup: true
 				//parameter 3
