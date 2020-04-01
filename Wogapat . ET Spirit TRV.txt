@@ -12,7 +12,7 @@
 		 *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
 		 *  for the specific language governing permissions and limitations under the License.
 		 *
-		 ***************************Version 15******************************************
+		 ***************************Version 17******************************************
 		 *
 		 * Icons
 		 * Lock - Icons made by Chanut from www.flaticon.com 
@@ -26,7 +26,7 @@
 		 *
 		 */
 		metadata {
-			definition (name: "Eurotronic Spirit TRV + DVC v15", namespace: "wogapat", author: "Patrick Wogan", cstHandler: true) {
+			definition (name: "Eurotronic Spirit TRV + DVC v17", namespace: "wogapat", author: "Patrick Wogan", cstHandler: true) {
 				capability "Actuator"
 				capability "Sensor"
 				capability "Battery"
@@ -42,6 +42,7 @@
 				capability "Health Check"
 				capability "Refresh"
 
+
 				command "autooff"
 				command "booston"
 				command "boostoff"
@@ -53,13 +54,15 @@
 				command "temperatureDown"
 				command "dvcon"
 				command "dvcoff"
-				command "Poll"
+				command "poll"
 				command "setCoolingSetpoint"
-
+				command "version"
+				
 				attribute "minHeatingSetpoint", "number" // google / amazon
 				attribute "maxHeatingSetpoint", "number" // google / amazon
 				attribute "thermostatTemperatureSetpoint", "String"	//need for google
-				//attribute "modeState", "string"
+				attribute "applicationVersion", "String"
+				attribute "zWaveLibraryType", "String"
 
 				
 			fingerprint manufacturerId: "148"
@@ -251,7 +254,7 @@
 
 				//Refresh
 				standardTile("refresh", "device.refresh", inactiveLabel: false, height: 2, width: 2, decoration: "flat") {
-					state "default", label:'refresh', action:"refresh.refresh", icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/refresh.png"
+					state "default", label:'refresh', action:"refresh", icon:"https://raw.githubusercontent.com/wogapat/ST-Eurotronic-Spirit/master/refresh.png"
 				}
 				
 				//Valve Level
@@ -303,7 +306,7 @@
 				
 					
 			//Thresholds for TRV Temp report
-			def tempReportRates = [:] // // 0x00 Unsolicited Temperature reporting disabled 0x01 – 0x32 report if temperature changed by delta = 0,1°C … 5,0 °C default 0x05 (report on delta T = 0,5°C)
+			def tempReportRates = [:] // // 0x00 Unsolicited Temperature reporting disabled 0x01 – 0x32 report if temperature changed by delta = 0,1°C … 5,0 °C default 0x00)
 				tempReportRates << ["0" : "Disabled"] // 0x00
 				tempReportRates << ["1" : "Report 0.1 degree temperature change"] // 0x01
 				tempReportRates << ["2" : "Report 0.2 degree temperature change"] // 0x02
@@ -420,18 +423,18 @@
 			if (device.currentValue("lock") != eventValue) {
 			event << createEvent(name: "lock", value: eventValue, displayed: true)
 			}
-			//lock.state = eventValue
+
 			log.info "Protection State - ${eventValue}"
 			return event
 		}
 
 		//Valve
 		def zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv3.SwitchMultilevelReport cmd){
-			log.info "Report Received : Valve open ${cmd.value}%"
-			def result = []
-			result << createEvent(name:"level", value: cmd.value, unit:"%", displayed: true)
-			result
+			def event = []
+			event << createEvent(name:"level", value: cmd.value, unit:"%", displayed: true)
 			
+			log.info "Report Received : Valve open ${cmd.value}%"
+			return event
 		}
 
 		//Temperature
@@ -570,6 +573,7 @@
 				events << processSystemNot(cmd)
 				break
 			}
+
 			log.info "Notification Report : $cmd"
 		}
 
@@ -588,7 +592,7 @@
 			if ($pushNot == 1) {
 			sendPush("${device.displayName}: Warning! $descriptionText")
 			}
-			
+			sendEvent(name: "NotificationCC_Power", value: descriptionText, displayed: false)			
 			log.info "Power management event: Warning! $descriptionText"
 		}
 		
@@ -614,6 +618,7 @@
 				sendPush("${device.displayName}: $descriptionText")
 
 			}
+			sendEvent(name: "NotificationCC_System", value: descriptionText, displayed: false)
 			log.info "System event: $descriptionText"
 		}
 
@@ -669,7 +674,6 @@
 
 				case 1:
 				events << processParam1(cmd)
-
 				break
 				
 				case 2:
@@ -701,8 +705,62 @@
 				break
 			}
 		}
+		
+		def zwaveEvent(physicalgraph.zwave.commands.versionv1.VersionReport cmd) {
+						log.debug "$cmd"
+			def zWaveLibraryTypeDisp  = String.format("%02X",cmd.zWaveLibraryType)
+			def zWaveLibraryTypeDesc  = ""
+			switch(cmd.zWaveLibraryType) {
+				case 1:
+				zWaveLibraryTypeDesc = "Static Controller"
+				break
 
+				case 2:
+				zWaveLibraryTypeDesc = "Controller"
+				break
 
+				case 3:
+				zWaveLibraryTypeDesc = "Enhanced Slave"
+				break
+
+				case 4:
+				zWaveLibraryTypeDesc = "Slave"
+				break
+
+				case 5:
+				zWaveLibraryTypeDesc = "Installer"
+				break
+
+				case 6:
+				zWaveLibraryTypeDesc = "Routing Slave"
+				break
+
+				case 7:
+				zWaveLibraryTypeDesc = "Bridge Controller"
+				break
+
+				case 8:
+				zWaveLibraryTypeDesc = "Device Under Test (DUT)"
+				break
+
+				case 0x0A:
+				zWaveLibraryTypeDesc = "AV Remote"
+				break
+
+				case 0x0B:
+				zWaveLibraryTypeDesc = "AV Device"
+				break
+
+				default:
+				zWaveLibraryTypeDesc = "N/A"
+			}
+
+			def applicationVersionDisp = String.format("%d.%02d",cmd.applicationVersion,cmd.applicationSubVersion)
+			def zWaveProtocolVersionDisp = String.format("%d.%02d",cmd.zWaveProtocolVersion,cmd.zWaveProtocolSubVersion)
+
+			sendEvent([name: "applicationVersion", value:  applicationVersionDisp])
+			sendEvent([name: "zWaveLibraryType", value:  zWaveLibraryTypeDesc])
+		}   
 
 	//LCDinvert	
 	private processParam1(cmd) {
@@ -715,7 +773,7 @@
 			}
 			
 		log.info "LCDinvert: ${setValue}"
-		settings.$LCDinvert = setValue
+		//settings.$LCDinvert = setValue
 	}
 
 	//LCDtimeout
@@ -741,13 +799,12 @@
 			}
 			
 		log.info "LCDtimeout: ${setValue}"
-		settings.$LCDtimeout = setValue
+		//settings.$LCDtimeout = setValue
 	}
 
 	//backlight
 	private processParam3(cmd) {
 		def setValue
-		//log.trace "$cmd.scaledConfigurationValue"
 			
 			if (cmd.scaledConfigurationValue == 0) {
 			setValue = "Disabled"
@@ -757,13 +814,12 @@
 			}
 			
 		log.info "backlight: ${setValue}"
-		settings.$backlight = setValue
+		//settings.$backlight = setValue
 	}
 
 	//battery
 	private processParam4(cmd) {
 		def setValue
-		//log.trace "$cmd.scaledConfigurationValue"
 			
 			if (cmd.scaledConfigurationValue == 0) {
 			setValue = "Event only"
@@ -772,13 +828,12 @@
 			setValue = "Once a day"
 			}
 		log.info "battery notification: ${setValue}"
-		settings.$battNotification = setValue
+		//settings.$battNotification = setValue
 	}
 
 	//temp report threshold
 	private processParam5(cmd) {
 		def setValue
-		//log.debug "$cmd.scaledConfigurationValue"
 			
 			if (cmd.scaledConfigurationValue == 0) {
 			setValue = "Disabled"
@@ -813,15 +868,14 @@
 			if (cmd.scaledConfigurationValue == 50) {
 			setValue = "Report 5.0 degree temperature change"
 			}
-		//log.debug "$tempReport"
+
 		log.info "Temp report: ${setValue}"
-		settings.$tempReport = setValue
+		//settings.$tempReport = setValue
 	}
 
 	//valve report
 	private processParam6(cmd) {
 		def setValue
-		//log.trace "$cmd.scaledConfigurationValue"
 			
 			if (cmd.scaledConfigurationValue == 0) {
 			setValue = "Disabled"
@@ -848,13 +902,12 @@
 			setValue = "Report 50% valve movement"
 			}
 		log.info "Valve report: ${setValue}"
-		settings.$valveReport = setValue
+		//settings.$valveReport = setValue
 	}
 		
 	//window open	
 	private processParam7(cmd) {
 		def setValue
-		//log.trace "$cmd.scaledConfigurationValue"
 			
 			if (cmd.scaledConfigurationValue == 0) {
 			setValue = "Disabled"
@@ -869,23 +922,20 @@
 			setValue = "High"
 			}
 		log.info "Window open detection: ${setValue}"
-		settings.windowOpen = setValue
+		//settings.windowOpen = setValue
 	}
 
 	//temp offset
 	private processParam8(cmd) {
 		def setValue
-		//log.trace "$cmd.scaledConfigurationValue"
 			
 		setValue = cmd.scaledConfigurationValue
 		log.info "Temp offset: ${setValue}"
-		settings.$tempOffset = setValue
+		//settings.$tempOffset = setValue
 	}
 
-
-		//handle commands
 		def temperatureUp() {
-			//log.debug(device.currentValue("nextHeatingSetpoint").toBigDecimal())
+			
 			def nextTemp = device.currentValue("nextHeatingSetpoint").toBigDecimal() + 0.5
 									// TODO: deal with Farenheit?
 			if(nextTemp > 28) {		// It can't handle above 28, so don't allow it go above
@@ -935,7 +985,6 @@
 				log.warn "temp changed to ${degrees} as in summer mode"
 			}
 			
-			sendEvent(name:"nextHeatingSetpoint", value: degrees, unit: getTemperatureScale(), descriptionText: "Next heating setpoint is ${degrees}", offdisplayed: true, isStateChange:true)
 			sendEvent(name:"nextHeatingSetpoint", value: degrees, unit: getTemperatureScale(), descriptionText: "Next heating setpoint is ${degrees}", displayed: true, isStateChange:true)
 			
 			if (device.currentValue("thermostatOperatingState") != "eco") {
@@ -994,7 +1043,6 @@
 			cmds << zwave.thermostatModeV2.thermostatModeSet(mode: 0x0F)
 			cmds << zwave.thermostatModeV2.thermostatModeGet()
 			cmds <<	zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 1)
-			cmds << zwave.switchMultilevelV3.switchMultilevelGet()
 			log.trace "heat On $cmds"
 			secureSequence(cmds)
 		}
@@ -1005,7 +1053,6 @@
 			cmds << zwave.thermostatModeV2.thermostatModeSet(mode: 1)
 			cmds << zwave.thermostatModeV2.thermostatModeGet()
 			cmds <<	zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 1)
-			cmds << zwave.switchMultilevelV3.switchMultilevelGet()
 			log.trace "auto $cmds" 
 			secureSequence (cmds)
 		}
@@ -1024,7 +1071,6 @@
 			cmds << zwave.thermostatModeV2.thermostatModeSet(mode: 0)
 			cmds << zwave.thermostatModeV2.thermostatModeGet()
 			cmds <<	zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 1)
-			cmds << zwave.switchMultilevelV3.switchMultilevelGet()
 			log.trace "froston $cmds" 
 			secureSequence(cmds)
 		}
@@ -1035,25 +1081,15 @@
 			
 		def dvcon() { //taken from Mode off new app
 			def cmds = []
-			def currentLevel
-			def maintLevel
-			//log.trace device.currentValue("level")
-				currentLevel = device.currentValue("level")
-				maintLevel = currentLevel.toInteger()
-				log.trace "${maintLevel}"
 
 			sendEvent(name: "thermostatMode", value: "off", displayed: true)
 			cmds << zwave.thermostatModeV2.thermostatModeSet(mode: 31)
 			cmds << zwave.thermostatModeV2.thermostatModeGet()
 			cmds <<	zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 1)
-			cmds << zwave.switchMultilevelV3.switchMultilevelGet()
 
-			//cmds << zwave.switchMultilevelV3.switchMultilevelSet(value: maintLevel)
-				//cmds << zwave.switchMultilevelV3.switchMultilevelGet()
 			log.trace "DVC On : $cmds"
 			secureSequence(cmds)
 			
-			//runIn(05, setLevel[maintLevel])
 		}
 		  
 		def dvcoff(){
@@ -1066,7 +1102,6 @@
 			cmds << zwave.thermostatModeV2.thermostatModeSet(mode: 11)
 			cmds << zwave.thermostatModeV2.thermostatModeGet()
 			cmds <<	zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 11)
-			cmds << zwave.switchMultilevelV3.switchMultilevelGet()
 			log.trace "Eco/Cool $cmds"
 			secureSequence(cmds)
 		}
@@ -1076,9 +1111,8 @@
 		}
 		  
 		def setThermostatMode(String) {
-			//log.debug "$String"
 			def nextMode = String
-			//log.debug "$nextMode"
+
 			switch ("$nextMode") {
 				case "heat":
 					(booston())
@@ -1092,7 +1126,6 @@
 				case "off":
 					(dvcon())
 					break
-				//log.debug "Can't do the command"
 				}
 		}
 			
@@ -1161,6 +1194,7 @@
 			cmds << zwave.protectionV1.protectionGet()
 			cmds << zwave.thermostatModeV2.thermostatModeSupportedGet()
 			cmds << zwave.manufacturerSpecificV1.manufacturerSpecificGet()
+			mds << zwave.versionV1.versionGet()
 			sendEvent(name: "configuration", value: "sent", displayed: true)
 			sendEvent(name: "configure", displayed: false)
 			//log.trace "Configuration sent"
@@ -1216,7 +1250,7 @@
 					cmds << zwave.batteryV1.batteryGet()
 				}
 				//once an hour ask for everything
-				if (!state.extra || (new Date().time) - state.extra > (60*60000)) {			// mimutes * millseconds these settings shouldnt be needs as device should send response at time of update
+				if (!state.extra || (new Date().time) - state.extra > (60*60000)) {			// minutes * millseconds these settings shouldnt be needs as device should send response at time of update
 					//cmds <<	zwave.thermostatModeV2.thermostatModeGet()	// get mode
 					cmds <<	zwave.thermostatSetpointV2.thermostatSetpointGet(setpointType: 11) 	// get eco/cool setpoint
 					cmds <<	zwave.basicV1.basicGet()											// get mode (basic)	
