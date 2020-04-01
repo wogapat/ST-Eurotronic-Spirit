@@ -1194,7 +1194,7 @@
 			cmds << zwave.protectionV1.protectionGet()
 			cmds << zwave.thermostatModeV2.thermostatModeSupportedGet()
 			cmds << zwave.manufacturerSpecificV1.manufacturerSpecificGet()
-			mds << zwave.versionV1.versionGet()
+			cmds << zwave.versionV1.versionGet()
 			sendEvent(name: "configuration", value: "sent", displayed: true)
 			sendEvent(name: "configure", displayed: false)
 			//log.trace "Configuration sent"
