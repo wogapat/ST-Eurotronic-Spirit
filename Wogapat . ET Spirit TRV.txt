@@ -38,6 +38,7 @@
 				capability "Thermostat Heating Setpoint"
 				capability "Thermostat Mode"
 				capability "Thermostat Operating State"
+                                capability "Thermostat"
 				capability "Configuration"
 				capability "Health Check"
 				capability "Refresh"
